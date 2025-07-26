@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+html {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+body {
+  background-image: linear-gradient(#00b2ff70 0.5px, transparent 0.5px),
+    linear-gradient(90deg, #00b2ff70 0.5px, transparent 0.5px);
+  background-size: 150px 50px;
+  background-position: -2px -2px;
+}
+
+.gradient {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.502) 50%,
+    rgba(255, 255, 255, 0.475) 0%
+  );
+}
+
+.gradient-t {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.343) 100%,
+    rgba(255, 255, 255, 0) 0%
+  );
+}
+
+.custom-border {
+  border: 1px solid #e9e9e9;
+}
+
+.custom-shadow {
+  box-shadow: 0 0 20px -5px rgba(0, 0, 0, 0.122);
+}
+
+@font-face {
+  font-family: "SourceCode";
+  src: url("/sourcecode.ttf") format("truetype");
+  font-weight: 100 900;
+  font-stretch: 75% 125%;
+  font-style: normal;
+}
+
+.source-code {
+  font-family: "SourceCode", monospace;
+}
+
+.nav-link {
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+}
+.nav-link:hover {
+  box-shadow: 0 0 10px rgba(0, 178, 255, 0.5);
+  color: #00b2ff;
+}
+.nav-link.active {
+  color: #00b2ff;
+  box-shadow: 0 0 10px rgba(0, 178, 255, 0.5);
+}
+
+/* 
+
+GENERAL Custom Styles
+
+*/
+
+.accent-bg {
+  background-color: #00b2ff;
+}
+
+.primary-btn {
+  background-color: #00b2ff;
+  color: #fff;
+  padding: 0.3rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.primary-btn:hover {
+  scale: 0.95;
+  box-shadow: 0 0 10px rgba(0, 178, 255, 0.5);
+  background-color: #00b3ffe9;
+}
+
+.logo-link {
+  transition: all 0.15s ease;
+  border-radius: 1rem;
+  padding: 0.5rem;
+}
+
+.logo-link:hover {
+  opacity: 0.9;
+}
+
+/* 
+
+ LOGIN Custom Styles
+
+*/
+
+.label {
+  font-size: 0.875rem;
+  color: #ccc;
+}
+
+/* 
+
+  Developer
+
+*/
+
+.developer-card {
+  transition: all 0.3s ease;
+}
+
+.developer-card:hover {
+  box-shadow: 0 0 10px rgba(0, 178, 255, 0.5);
+  transform: translateY(-5px);
+}
