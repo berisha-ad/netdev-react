@@ -1,11 +1,11 @@
 type Props = {
   children: React.ReactNode;
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  type?: "button" | "submit" | "reset";
 };
 
-const PrimaryBtn = ({ children, onClick }: Props) => {
+const PrimaryBtn = ({ children, type = "button" }: Props) => {
   return (
-    <button onClick={onClick} className="primary-btn">
+    <button type={type} className="primary-btn">
       {children}
     </button>
   );

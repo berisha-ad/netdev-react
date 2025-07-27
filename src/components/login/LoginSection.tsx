@@ -27,11 +27,19 @@ const LoginSection = () => {
           email,
           password,
         },
-        { headers: { "X-XSRF-TOKEN": csrfToken || "" } }
+        {
+          headers: {
+            "X-XSRF-TOKEN": csrfToken || "",
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
       );
+      console.log(response);
       setError("");
     } catch (error) {
       setError("Invalid credentials!");
+      console.error("Login error:", error);
     }
   };
 
