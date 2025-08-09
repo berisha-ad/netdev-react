@@ -22,5 +22,6 @@ export const getCsrfToken = async () => {
     return decodeURIComponent(encoded || "");
   } catch (error) {
     console.error("Error fetching CSRF token:", error);
+    return null;
   }
 };

@@ -1,7 +1,8 @@
-import { Outlet } from "react-router";
+import { Outlet } from "react-router-dom";
 import Gradient from "../../components/shared/Gradient";
 import Navbar from "../../components/shared/navbar/Navbar";
 import BehindNav from "../../components/shared/BehindNav";
+import Footer from "../../components/shared/Footer";
 
 const RootLayout = () => {
   return (
@@ -9,6 +10,7 @@ const RootLayout = () => {
       <BehindNav />
       <Navbar />
       <Outlet />
+      <Footer />
     </Gradient>
   );
 };

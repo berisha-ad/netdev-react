@@ -1,87 +1,111 @@
-import { useState } from "react";
-import { api, getCsrfToken } from "../../api";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import { validateLogin } from "./utils";
+import type { ValidationError } from "./utils";
 
 import BorderBox from "../shared/BorderBox";
 import PrimaryBtn from "../shared/PrimaryBtn";
 import Section from "../shared/Section";
+import LoadingSpinner from "../shared/LoadingSpinner";
+import Input from "../shared/Input";
+import ErrorMessage from "../shared/ErrorMessage";
 
 const LoginSection = () => {
-  const [email, setEmail] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [successMessage, setSuccessMessage] = useState(location.state?.message || "");
+  const { login, error, isLoading, clearError } = useAuth();
+
+  // Clear error when component mounts
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validLogin = validateLogin(email, password);
-    if (!validLogin) {
-      setError("Invalid email or password!");
+    
+    // Clear any previous errors and success message
+    clearError();
+    setValidationErrors([]);
+    setSuccessMessage("");
+    
+    // Validate inputs
+    const errors = validateLogin(email, password);
+    if (errors.length > 0) {
+      setValidationErrors(errors);
       return;
     }
 
     try {
-      const csrfToken = await getCsrfToken();
-      const response = await api.post(
-        "/api/login",
-        {
-          email,
-          password,
-        },
-        {
-          headers: {
-            "X-XSRF-TOKEN": csrfToken || "",
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
-      console.log(response);
-      setError("");
+      await login({ email, password });
+      
+      // Redirect to the page they were trying to access, or user-info-setup
+      const from = location.state?.from?.pathname || "/user-info-setup";
+      navigate(from, { replace: true });
     } catch (error) {
-      setError("Invalid credentials!");
-      console.error("Login error:", error);
+      // Error is handled by the auth context
     }
+  };
+
+  const getFieldError = (fieldName: string): string | undefined => {
+    return validationErrors.find(error => error.field === fieldName)?.message;
   };
 
   return (
     <Section>
       <div className="flex justify-center items-center h-full">
         <BorderBox>
-          <div className="w-100 p-4">
+          <form onSubmit={handleLogin} className="w-100 p-4">
             <h1 className="text-2xl source-code">Welcome back!</h1>
+            
+            {successMessage && (
+              <div className="mt-4">
+                <ErrorMessage message={successMessage} type="info" />
+              </div>
+            )}
             <div className="mt-4">
-              <label className="label" htmlFor="email">
-                Email
-              </label>
-              <input
-                type="text"
-                className="custom-border py-1 px-2 mt-1 rounded-md w-full"
+              <Input
+                label="Email"
+                type="email"
                 name="email"
                 id="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setSuccessMessage(""); // Clear success message when typing
+                }}
+                error={getFieldError('email')}
+                required
               />
             </div>
             <div className="mt-4">
-              <label className="label" htmlFor="password">
-                Password
-              </label>
-              <input
+              <Input
+                label="Password"
                 type="password"
-                className="custom-border py-1 px-2 mt-1 rounded-md w-full"
                 name="password"
                 id="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setSuccessMessage(""); // Clear success message when typing
+                }}
+                error={getFieldError('password')}
+                required
               />
             </div>
             <div className="mt-4 flex justify-center items-center">
-              <PrimaryBtn onClick={handleLogin}>Login</PrimaryBtn>
+              <PrimaryBtn type="submit" disabled={isLoading}>
+                {isLoading ? <LoadingSpinner size="sm" /> : "Login"}
+              </PrimaryBtn>
             </div>
-          </div>
+          </form>
           {error && (
-            <div className="bg-white rounded-lg p-2 shadow-md text-center mt-2 text-red-400">
-              {error}
+            <div className="mt-4">
+              <ErrorMessage message={error} type="error" />
             </div>
           )}
         </BorderBox>
