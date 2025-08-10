@@ -1,7 +1,20 @@
-import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import type { ReactNode } from 'react';
-import { api, getCsrfToken } from '../api';
-import type { User, UserInfo, LoginCredentials, RegisterData, AuthState, AuthContextType } from '../types';
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useCallback,
+} from "react";
+import type { ReactNode } from "react";
+import { api, getCsrfToken } from "../api";
+import type {
+  User,
+  UserInfo,
+  LoginCredentials,
+  RegisterData,
+  AuthState,
+  AuthContextType,
+} from "../types";
 
 const initialState: AuthState = {
   user: null,
@@ -12,20 +25,20 @@ const initialState: AuthState = {
 };
 
 type AuthAction =
-  | { type: 'AUTH_START' }
-  | { type: 'AUTH_SUCCESS'; payload: { user: User; userInfo?: UserInfo } }
-  | { type: 'AUTH_FAILURE'; payload: string }
-  | { type: 'AUTH_LOGOUT' }
-  | { type: 'CLEAR_ERROR' }
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'UPDATE_USER_INFO'; payload: UserInfo }
-  | { type: 'UPDATE_USER'; payload: User };
+  | { type: "AUTH_START" }
+  | { type: "AUTH_SUCCESS"; payload: { user: User; userInfo?: UserInfo } }
+  | { type: "AUTH_FAILURE"; payload: string }
+  | { type: "AUTH_LOGOUT" }
+  | { type: "CLEAR_ERROR" }
+  | { type: "SET_LOADING"; payload: boolean }
+  | { type: "UPDATE_USER_INFO"; payload: UserInfo }
+  | { type: "UPDATE_USER"; payload: User };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
-    case 'AUTH_START':
+    case "AUTH_START":
       return { ...state, isLoading: true, error: null };
-    case 'AUTH_SUCCESS':
+    case "AUTH_SUCCESS":
       return {
         ...state,
         user: action.payload.user,
@@ -34,7 +47,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isLoading: false,
         error: null,
       };
-    case 'AUTH_FAILURE':
+    case "AUTH_FAILURE":
       return {
         ...state,
         user: null,
@@ -43,7 +56,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isLoading: false,
         error: action.payload,
       };
-    case 'AUTH_LOGOUT':
+    case "AUTH_LOGOUT":
       return {
         ...state,
         user: null,
@@ -52,16 +65,16 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isLoading: false,
         error: null,
       };
-    case 'CLEAR_ERROR':
+    case "CLEAR_ERROR":
       return { ...state, error: null };
-    case 'SET_LOADING':
+    case "SET_LOADING":
       return { ...state, isLoading: action.payload };
-    case 'UPDATE_USER_INFO':
+    case "UPDATE_USER_INFO":
       return {
         ...state,
         userInfo: action.payload,
       };
-    case 'UPDATE_USER':
+    case "UPDATE_USER":
       return {
         ...state,
         user: action.payload,
@@ -78,30 +91,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = useCallback(async () => {
     try {
-      dispatch({ type: 'AUTH_START' });
-      
+      dispatch({ type: "AUTH_START" });
+
       await getCsrfToken();
-      
-      const userResponse = await api.get('/api/user');
-      
+
+      const userResponse = await api.get("/api/user");
+
       let userInfo = null;
       try {
-        const userInfoResponse = await api.get('/api/user/info');
+        const userInfoResponse = await api.get("/api/user/info");
         userInfo = userInfoResponse.data.data || userInfoResponse.data;
-      } catch (infoError) {
-      }
-      
+      } catch (infoError) {}
+
       const userData = userResponse.data.data || userResponse.data;
-      
+
       dispatch({
-        type: 'AUTH_SUCCESS',
+        type: "AUTH_SUCCESS",
         payload: {
           user: userData,
           userInfo: userInfo,
         },
       });
     } catch (error) {
-      dispatch({ type: 'AUTH_FAILURE', payload: '' });
+      dispatch({ type: "AUTH_FAILURE", payload: "" });
     }
   }, []);
 
@@ -111,125 +123,126 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     try {
-      dispatch({ type: 'AUTH_START' });
-      
+      dispatch({ type: "AUTH_START" });
+
       const csrfToken = await getCsrfToken();
-      
-      await api.post('/api/login', credentials, {
+
+      await api.post("/api/login", credentials, {
         headers: {
-          'X-XSRF-TOKEN': csrfToken || '',
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
+          "X-XSRF-TOKEN": csrfToken || "",
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
       });
 
-      const userResponse = await api.get('/api/user');
-      
+      const userResponse = await api.get("/api/user");
+
       let userInfo = null;
       try {
-        const userInfoResponse = await api.get('/api/user/info');
+        const userInfoResponse = await api.get("/api/user/info");
         userInfo = userInfoResponse.data.data || userInfoResponse.data;
-      } catch (infoError) {
-      }
-      
+      } catch (infoError) {}
+
       const userData = userResponse.data.data || userResponse.data;
-      
+
       dispatch({
-        type: 'AUTH_SUCCESS',
+        type: "AUTH_SUCCESS",
         payload: {
           user: userData,
           userInfo: userInfo,
         },
       });
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
-      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      const errorMessage = error.response?.data?.message || "Login failed";
+      dispatch({ type: "AUTH_FAILURE", payload: errorMessage });
       throw new Error(errorMessage);
     }
   }, []);
 
   const register = useCallback(async (data: RegisterData) => {
     try {
-      dispatch({ type: 'AUTH_START' });
-      
+      dispatch({ type: "AUTH_START" });
+
       const csrfToken = await getCsrfToken();
-      
-      await api.post('/api/register', data, {
+
+      await api.post("/api/register", data, {
         headers: {
-          'X-XSRF-TOKEN': csrfToken || '',
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
+          "X-XSRF-TOKEN": csrfToken || "",
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
       });
 
-      // Clear any previous errors on success
-      dispatch({ type: 'CLEAR_ERROR' });
-      
+      dispatch({ type: "CLEAR_ERROR" });
+
       return { success: true };
     } catch (error: any) {
-      // Don't set empty error messages for validation errors
       if (error.response?.status === 422) {
-        dispatch({ type: 'CLEAR_ERROR' });
-        throw error; // Re-throw to let component handle validation errors
+        dispatch({ type: "CLEAR_ERROR" });
+        throw error;
       }
-      
-      const errorMessage = error.response?.data?.message || 'Registration failed';
-      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+
+      const errorMessage =
+        error.response?.data?.message || "Registration failed";
+      dispatch({ type: "AUTH_FAILURE", payload: errorMessage });
       throw error;
     }
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      dispatch({ type: 'AUTH_LOGOUT' });
-      
+      dispatch({ type: "AUTH_LOGOUT" });
+
       const csrfToken = await getCsrfToken();
-      await api.post('/api/logout', {}, {
-        headers: {
-          'X-XSRF-TOKEN': csrfToken || '',
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-      });
+      await api.post(
+        "/api/logout",
+        {},
+        {
+          headers: {
+            "X-XSRF-TOKEN": csrfToken || "",
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
+      );
     } catch (error) {
-      console.error('Logout API error:', error);
+      console.error("Logout API error:", error);
     } finally {
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = "/";
       }, 100);
     }
   }, []);
 
   const clearError = useCallback(() => {
-    dispatch({ type: 'CLEAR_ERROR' });
+    dispatch({ type: "CLEAR_ERROR" });
   }, []);
 
   const refreshUserInfo = useCallback(async () => {
     try {
-      const userInfoResponse = await api.get('/api/user/info');
+      const userInfoResponse = await api.get("/api/user/info");
       const userInfo = userInfoResponse.data.data || userInfoResponse.data;
-      dispatch({ type: 'UPDATE_USER_INFO', payload: userInfo });
+      dispatch({ type: "UPDATE_USER_INFO", payload: userInfo });
     } catch (error) {
-      console.error('Error refreshing user info:', error);
+      console.error("Error refreshing user info:", error);
     }
   }, []);
 
   const refreshUser = useCallback(async () => {
     try {
-      const userResponse = await api.get('/api/user');
+      const userResponse = await api.get("/api/user");
       const userData = userResponse.data.data || userResponse.data;
-      dispatch({ type: 'UPDATE_USER', payload: userData });
+      dispatch({ type: "UPDATE_USER", payload: userData });
     } catch (error) {
-      console.error('Error refreshing user data:', error);
+      console.error("Error refreshing user data:", error);
     }
   }, []);
 
   const refreshAllUserData = useCallback(async () => {
     try {
-      // Refresh both user and userInfo to ensure consistency
       await Promise.all([refreshUser(), refreshUserInfo()]);
     } catch (error) {
-      console.error('Error refreshing all user data:', error);
+      console.error("Error refreshing all user data:", error);
     }
   }, [refreshUser, refreshUserInfo]);
 
@@ -251,7 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-} 
+}

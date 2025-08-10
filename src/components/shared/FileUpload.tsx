@@ -1,9 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { useFileUpload } from '../../hooks/useFileUpload';
-import DangerBtn from './DangerBtn';
+import React, { useState, useRef } from "react";
+import { useFileUpload } from "../../hooks/useFileUpload";
 
 interface FileUploadProps {
-  type: 'profile-picture' | 'resume' | 'general';
+  type: "profile-picture" | "resume" | "general";
   onUploadSuccess: (fileUrl: string, fileName: string) => void;
   onUploadError?: (error: string) => void;
   currentFile?: string;
@@ -23,7 +22,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   maxSize = 5, // 5MB default
   label,
   required = false,
-  className = ""
+  className = "",
 }) => {
   const [preview, setPreview] = useState<string | null>(currentFile || null);
   const [dragActive, setDragActive] = useState(false);
@@ -32,8 +31,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const { upload, isUploading, error, reset } = useFileUpload({
     type,
     onSuccess: (fileUrl: string, fileName: string) => {
-      // Create preview for images
-      if (type === 'profile-picture') {
+      if (type === "profile-picture") {
         const reader = new FileReader();
         reader.onload = (e) => {
           setPreview(e.target?.result as string);
@@ -47,12 +45,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   const getDefaultAccept = () => {
     switch (type) {
-      case 'profile-picture':
-        return 'image/*';
-      case 'resume':
-        return '.pdf,.doc,.docx';
+      case "profile-picture":
+        return "image/*";
+      case "resume":
+        return ".pdf,.doc,.docx";
       default:
-        return accept || '*/*';
+        return accept || "*/*";
     }
   };
 
@@ -70,9 +68,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   };
@@ -95,9 +93,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const removeFile = () => {
     setPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
-    onUploadSuccess('', '');
+    onUploadSuccess("", "");
   };
 
   return (
@@ -112,8 +110,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
       <div
         className={`
           relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-          ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
-          ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
+          ${
+            dragActive
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-300 hover:border-gray-400"
+          }
+          ${isUploading ? "opacity-50 cursor-not-allowed" : ""}
         `}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -135,7 +137,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
             <p className="text-sm text-gray-600">Uploading...</p>
           </div>
-        ) : preview && type === 'profile-picture' ? (
+        ) : preview && type === "profile-picture" ? (
           <div className="flex flex-col items-center">
             <img
               src={preview}
@@ -152,8 +154,18 @@ const FileUpload: React.FC<FileUploadProps> = ({
               className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
               title="Remove image"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
               </svg>
             </button>
           </div>
@@ -175,14 +187,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
             <p className="text-sm text-gray-600">
               <span className="font-medium text-blue-600 hover:text-blue-500">
                 Click to upload
-              </span>{' '}
+              </span>{" "}
               or drag and drop
             </p>
-                         <p className="text-xs text-gray-500 mt-1">
-               {type === 'profile-picture' && 'PNG, JPG, GIF up to 2MB'}
-               {type === 'resume' && 'PDF, DOC, DOCX up to 10MB'}
-               {type === 'general' && `Files up to ${maxSize}MB`}
-             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {type === "profile-picture" && "PNG, JPG, GIF up to 2MB"}
+              {type === "resume" && "PDF, DOC, DOCX up to 10MB"}
+              {type === "general" && `Files up to ${maxSize}MB`}
+            </p>
           </div>
         )}
       </div>
@@ -190,4 +202,4 @@ const FileUpload: React.FC<FileUploadProps> = ({
   );
 };
 
-export default FileUpload; 
+export default FileUpload;

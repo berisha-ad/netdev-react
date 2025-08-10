@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import LoadingSpinner from './LoadingSpinner';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface AuthRedirectProps {
   children: React.ReactNode;
@@ -13,11 +13,10 @@ const AuthRedirect: React.FC<AuthRedirectProps> = ({ children }) => {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      navigate('/', { replace: true });
+      navigate("/", { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Show loading spinner while checking auth status
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -26,13 +25,11 @@ const AuthRedirect: React.FC<AuthRedirectProps> = ({ children }) => {
     );
   }
 
-  // If authenticated, don't render children (will redirect)
   if (isAuthenticated) {
     return null;
   }
 
-  // If not authenticated, render the auth page
   return <>{children}</>;
 };
 
-export default AuthRedirect; 
+export default AuthRedirect;

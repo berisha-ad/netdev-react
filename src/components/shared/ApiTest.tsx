@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { api } from '../../api';
+import { useState } from "react";
+import { api } from "../../api";
 
 const ApiTest = () => {
   const [testData, setTestData] = useState<any>(null);
@@ -8,30 +8,26 @@ const ApiTest = () => {
   const testEndpoints = async () => {
     setLoading(true);
     try {
-      // Test search endpoint
-      const searchResponse = await api.get('/api/users/search');
-      console.log('Search response:', searchResponse.data);
+      const searchResponse = await api.get("/api/users/search");
+      console.log("Search response:", searchResponse.data);
 
-      // Test professions endpoint
-      const professionsResponse = await api.get('/api/professions');
-      console.log('Professions response:', professionsResponse.data);
+      const professionsResponse = await api.get("/api/professions");
+      console.log("Professions response:", professionsResponse.data);
 
-      // Test locations endpoint
-      const locationsResponse = await api.get('/api/locations');
-      console.log('Locations response:', locationsResponse.data);
+      const locationsResponse = await api.get("/api/locations");
+      console.log("Locations response:", locationsResponse.data);
 
-      // Test skills endpoint
-      const skillsResponse = await api.get('/api/skills');
-      console.log('Skills response:', skillsResponse.data);
+      const skillsResponse = await api.get("/api/skills");
+      console.log("Skills response:", skillsResponse.data);
 
       setTestData({
         search: searchResponse.data,
         professions: professionsResponse.data,
         locations: locationsResponse.data,
-        skills: skillsResponse.data
+        skills: skillsResponse.data,
       });
     } catch (error) {
-      console.error('API test error:', error);
+      console.error("API test error:", error);
     } finally {
       setLoading(false);
     }
@@ -39,14 +35,14 @@ const ApiTest = () => {
 
   return (
     <div className="p-4">
-      <button 
+      <button
         onClick={testEndpoints}
         disabled={loading}
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
-        {loading ? 'Testing...' : 'Test API Endpoints'}
+        {loading ? "Testing..." : "Test API Endpoints"}
       </button>
-      
+
       {testData && (
         <div className="mt-4">
           <h3>API Test Results:</h3>
@@ -59,4 +55,4 @@ const ApiTest = () => {
   );
 };
 
-export default ApiTest; 
+export default ApiTest;
