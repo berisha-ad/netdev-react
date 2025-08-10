@@ -44,6 +44,13 @@ const AddSkillModal: React.FC<AddSkillModalProps> = ({
         return;
       }
       console.log('Selected existing skill ID:', skillId);
+      
+      // Update the skillForm with the validated skill ID
+      const updatedSkillForm = { ...skillForm, skill: skillId.toString() };
+      console.log('Submitting existing skill ID:', updatedSkillForm.skill);
+      await onAddSkill(updatedSkillForm);
+      setSkillForm({ skill: '', isNewSkill: false });
+      return;
     } else {
       const trimmedSkill = skillForm.skill.trim();
       if (trimmedSkill.length < 2) {
@@ -71,10 +78,6 @@ const AddSkillModal: React.FC<AddSkillModalProps> = ({
       setSkillForm({ skill: '', isNewSkill: false });
       return;
     }
-    
-    console.log('Submitting existing skill ID:', skillForm.skill);
-    await onAddSkill(skillForm);
-    setSkillForm({ skill: '', isNewSkill: false });
   };
 
   const availableSkills = allSkills.filter(skill => 

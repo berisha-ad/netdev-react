@@ -18,7 +18,8 @@ type AuthAction =
   | { type: 'AUTH_LOGOUT' }
   | { type: 'CLEAR_ERROR' }
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'UPDATE_USER_INFO'; payload: UserInfo };
+  | { type: 'UPDATE_USER_INFO'; payload: UserInfo }
+  | { type: 'UPDATE_USER'; payload: User };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
@@ -59,6 +60,11 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         userInfo: action.payload,
+      };
+    case 'UPDATE_USER':
+      return {
+        ...state,
+        user: action.payload,
       };
     default:
       return state;
@@ -156,13 +162,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      dispatch({ type: 'AUTH_FAILURE', payload: '' });
+      // Clear any previous errors on success
+      dispatch({ type: 'CLEAR_ERROR' });
       
       return { success: true };
     } catch (error: any) {
+      // Don't set empty error messages for validation errors
       if (error.response?.status === 422) {
-        dispatch({ type: 'AUTH_FAILURE', payload: '' });
-        throw error;
+        dispatch({ type: 'CLEAR_ERROR' });
+        throw error; // Re-throw to let component handle validation errors
       }
       
       const errorMessage = error.response?.data?.message || 'Registration failed';
@@ -206,6 +214,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const userResponse = await api.get('/api/user');
+      const userData = userResponse.data.data || userResponse.data;
+      dispatch({ type: 'UPDATE_USER', payload: userData });
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  }, []);
+
+  const refreshAllUserData = useCallback(async () => {
+    try {
+      // Refresh both user and userInfo to ensure consistency
+      await Promise.all([refreshUser(), refreshUserInfo()]);
+    } catch (error) {
+      console.error('Error refreshing all user data:', error);
+    }
+  }, [refreshUser, refreshUserInfo]);
+
   const value: AuthContextType = {
     ...state,
     login,
@@ -214,6 +241,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth,
     clearError,
     refreshUserInfo,
+    refreshUser,
+    refreshAllUserData,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

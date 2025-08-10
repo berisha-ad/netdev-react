@@ -25,14 +25,24 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
   const [isNewLocation, setIsNewLocation] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (city.trim() && country.trim()) {
-      await onAdd(city.trim(), country.trim(), isNewLocation);
-      setCity('');
-      setCountry('');
-      setIsNewLocation(false);
+      setIsSubmitting(true);
+      try {
+        await onAdd(city.trim(), country.trim(), isNewLocation);
+        // Reset form on success
+        setCity('');
+        setCountry('');
+        setIsNewLocation(false);
+      } catch (error) {
+        // Error is handled by the parent component
+        console.error('Location update failed:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -40,14 +50,23 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({
     setCity('');
     setCountry('');
     setIsNewLocation(false);
+    setIsSubmitting(false);
     onClose();
   };
 
   const handleLocationSelect = (locationString: string) => {
-    const [selectedCity, selectedCountry] = locationString.split(', ');
-    setCity(selectedCity);
-    setCountry(selectedCountry);
+    if (locationString) {
+      const [selectedCity, selectedCountry] = locationString.split(', ');
+      setCity(selectedCity);
+      setCountry(selectedCountry);
+    } else {
+      setCity('');
+      setCountry('');
+    }
   };
+
+  const isFormValid = city.trim() && country.trim();
+  const isDisabled = isLoading || isSubmitting || !isFormValid;
 
   return (
     <Modal
@@ -69,6 +88,7 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({
                 checked={!isNewLocation}
                 onChange={() => setIsNewLocation(false)}
                 className="mr-2"
+                disabled={isSubmitting}
               />
               Select from existing locations
             </label>
@@ -79,6 +99,7 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({
                 checked={isNewLocation}
                 onChange={() => setIsNewLocation(true)}
                 className="mr-2"
+                disabled={isSubmitting}
               />
               Create new location
             </label>
@@ -98,6 +119,7 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({
                 label: `${loc.city}, ${loc.country}` 
               }))
             ]}
+            disabled={isSubmitting}
           />
         ) : (
           <>
@@ -108,6 +130,7 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({
               onChange={(e) => setCity(e.target.value)}
               placeholder="e.g., Vienna, Berlin, New York"
               required
+              disabled={isSubmitting}
             />
             <Input
               label="Country"
@@ -116,16 +139,17 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({
               onChange={(e) => setCountry(e.target.value)}
               placeholder="e.g., Austria, Germany, USA"
               required
+              disabled={isSubmitting}
             />
           </>
         )}
 
         <div className="flex justify-end space-x-3 pt-4">
-          <SecondaryBtn onClick={handleClose} disabled={isLoading}>
+          <SecondaryBtn onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </SecondaryBtn>
-          <PrimaryBtn type="submit" disabled={isLoading || !city.trim() || !country.trim()}>
-            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Location'}
+          <PrimaryBtn type="submit" disabled={isDisabled}>
+            {isSubmitting ? <LoadingSpinner size="sm" /> : 'Add Location'}
           </PrimaryBtn>
         </div>
       </form>

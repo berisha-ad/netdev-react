@@ -1,12 +1,16 @@
 import { useCallback } from 'react';
 import { api, getCsrfToken } from '../api';
-import type { EditProfileForm } from '../types';
+import type { EditProfileForm, UserInfo } from '../types';
 
 export const useDashboardActions = (
   setError: (error: string | null) => void,
   refreshUserInfo: () => Promise<void>,
   refreshSkills: () => Promise<void>,
-  refreshProjects: () => Promise<void>
+  refreshProjects: () => Promise<void>,
+  refreshProfessions?: () => Promise<void>,
+  refreshLocations?: () => Promise<void>,
+  refreshAllSkills?: () => Promise<void>,
+  currentUserInfo?: UserInfo | null
 ) => {
   const ensureIntegerSkillId = (skillId: any): number => {
     const parsedId = parseInt(skillId);
@@ -105,21 +109,29 @@ export const useDashboardActions = (
                   },
                 });
               } else {
-                throw new Error('Skill already exists but could not be found');
+                throw new Error('Skill not found after creation attempt');
               }
             } catch (findError: any) {
               console.error('Error finding existing skill:', findError);
-              throw createError;
+              throw new Error('Failed to find or attach existing skill');
             }
           } else {
             throw createError;
           }
         }
       } else {
-        const skillId = ensureIntegerSkillId(skillData.skill);
-        console.log('Attaching existing skill ID:', skillId, 'Type:', typeof skillId);
+        // For existing skills, skillData.skill contains the skill ID
+        console.log('Attaching existing skill with ID:', skillData.skill);
+        const skillId = parseInt(skillData.skill);
         
-        await api.post('/api/user/skills/attach', { skill_ids: [skillId] }, {
+        if (isNaN(skillId) || skillId <= 0) {
+          throw new Error('Invalid skill ID provided');
+        }
+        
+        console.log('Existing skill ID:', skillId, 'Type:', typeof skillId);
+        
+        const validatedSkillId = ensureIntegerSkillId(skillId);
+        await api.post('/api/user/skills/attach', { skill_ids: [validatedSkillId] }, {
           headers: {
             'X-XSRF-TOKEN': csrfToken || '',
             'Content-Type': 'application/json',
@@ -128,25 +140,18 @@ export const useDashboardActions = (
         });
       }
       
+      // Refresh user skills after adding
       await refreshSkills();
+      
+      // Refresh all skills to include newly created ones
+      if (refreshAllSkills) {
+        await refreshAllSkills();
+      }
     } catch (error: any) {
       console.error('Error adding skill:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      
-      if (error.response?.status === 422) {
-        const validationErrors = error.response.data.errors;
-        if (validationErrors) {
-          const errorMessages = Object.values(validationErrors).flat();
-          setError(errorMessages.join(', '));
-        } else {
-          setError(error.response.data.message || 'Validation error occurred');
-        }
-      } else {
-        setError(error.response?.data?.message || 'Failed to add skill');
-      }
+      setError(error.response?.data?.message || error.message || 'Failed to add skill');
     }
-  }, [setError, refreshSkills]);
+  }, [setError, refreshSkills, refreshAllSkills]);
 
   const handleRemoveSkill = useCallback(async (skillId: number) => {
     try {
@@ -286,17 +291,23 @@ export const useDashboardActions = (
       
       // Refresh user info after adding profession
       await refreshUserInfo();
+      
+      // Refresh professions to include newly created ones
+      if (refreshProfessions) {
+        await refreshProfessions();
+      }
     } catch (error: any) {
       console.error('Error adding profession:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       setError(error.response?.data?.message || 'Failed to add profession');
     }
-  }, [setError, refreshUserInfo]);
+  }, [setError, refreshUserInfo, refreshProfessions]);
 
   const handleAddLocation = useCallback(async (locationData: { city: string; country: string; isNewLocation: boolean }) => {
     try {
       setError(null);
+      console.log('Adding location with data:', locationData);
 
       await api.get('/sanctum/csrf-cookie');
       const csrfToken = await getCsrfToken();
@@ -304,8 +315,8 @@ export const useDashboardActions = (
       let locationId: number;
 
       if (locationData.isNewLocation) {
-        // Create new location first
         console.log('Creating new location:', locationData.city, locationData.country);
+        
         const createResponse = await api.post('/api/locations', { 
           city: locationData.city, 
           country: locationData.country 
@@ -318,40 +329,44 @@ export const useDashboardActions = (
         });
 
         console.log('Location creation response:', createResponse.data);
-        locationId = createResponse.data.data?.id || createResponse.data.id;
+        locationId = parseInt(createResponse.data.data?.id || createResponse.data.id);
       } else {
-        // Find existing location
+        // For existing locations, find the location by city and country
+        console.log('Finding existing location by city and country:', locationData.city, locationData.country);
+        
         const locationsResponse = await api.get('/api/locations');
-        const locations = locationsResponse.data.data || locationsResponse.data;
-        const existingLocation = locations.find((l: any) => 
-          l.city === locationData.city && l.country === locationData.country
+        const allLocations = locationsResponse.data.data || locationsResponse.data;
+        
+        const existingLocation = allLocations.find((l: any) => 
+          l.city.toLowerCase() === locationData.city.toLowerCase() && 
+          l.country.toLowerCase() === locationData.country.toLowerCase()
         );
         
         if (!existingLocation) {
-          throw new Error('Location not found');
+          throw new Error('Selected location not found');
         }
         
-        locationId = existingLocation.id;
-      }
-      
-      // Get current user info first
-      let currentUserInfo = {};
-      try {
-        const userInfoResponse = await api.get('/api/user/info');
-        currentUserInfo = userInfoResponse.data.data || userInfoResponse.data || {};
-      } catch (infoError) {
-        // User info doesn't exist yet, that's okay
-        console.log('No existing user info found, creating new');
+        locationId = parseInt(existingLocation.id);
       }
 
-      // Update user info with location_id as integer, preserving existing data
-      console.log('Updating user info with location_id:', locationId);
-      const updateData = {
-        ...currentUserInfo,
-        location_id: locationId
-      };
-      console.log('Sending update data:', updateData);
+      console.log('Location ID to set:', locationId, 'Type:', typeof locationId);
       
+      // Prepare update data with existing user info to avoid validation errors
+      const updateData: any = { location_id: locationId };
+      
+      // Include existing user info fields to satisfy validation requirements
+      if (currentUserInfo) {
+        if (currentUserInfo.tagline) updateData.tagline = currentUserInfo.tagline;
+        if (currentUserInfo.description) updateData.description = currentUserInfo.description;
+        if (currentUserInfo.status) updateData.status = currentUserInfo.status;
+        if (currentUserInfo.profession_id) updateData.profession_id = currentUserInfo.profession_id;
+        if (currentUserInfo.github_link) updateData.github_link = currentUserInfo.github_link;
+        if (currentUserInfo.linkedin_link) updateData.linkedin_link = currentUserInfo.linkedin_link;
+        if (currentUserInfo.portfolio_link) updateData.portfolio_link = currentUserInfo.portfolio_link;
+        if (currentUserInfo.started_date) updateData.started_date = currentUserInfo.started_date;
+      }
+      
+      // Update user info with the new location and existing data
       await api.post('/api/user/info', updateData, {
         headers: {
           'X-XSRF-TOKEN': csrfToken || '',
@@ -359,16 +374,20 @@ export const useDashboardActions = (
           Accept: 'application/json',
         },
       });
+
+      console.log('User info updated successfully with location ID:', locationId);
       
-      // Refresh user info after adding location
+      // Refresh data
       await refreshUserInfo();
+      if (refreshLocations) {
+        await refreshLocations();
+      }
     } catch (error: any) {
       console.error('Error adding location:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      setError(error.response?.data?.message || 'Failed to add location');
+      setError(error.response?.data?.message || error.message || 'Failed to add location');
+      throw error; // Re-throw to allow the calling component to handle it
     }
-  }, [setError, refreshUserInfo]);
+  }, [setError, refreshUserInfo, refreshLocations]);
 
   return {
     handleSaveProfile,

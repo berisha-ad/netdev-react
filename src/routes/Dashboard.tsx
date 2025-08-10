@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { useDashboardActions } from "../hooks/useDashboardActions";
+import { api, getCsrfToken } from "../api";
 import Container from "../components/shared/Container";
 import Section from "../components/shared/Section";
 import LoadingSpinner from "../components/shared/LoadingSpinner";
@@ -16,6 +17,7 @@ import AddSkillModal from "../components/dashboard/AddSkillModal";
 import AddProjectModal from "../components/dashboard/AddProjectModal";
 import AddProfessionModal from "../components/dashboard/AddProfessionModal";
 import AddLocationModal from "../components/dashboard/AddLocationModal";
+import DeleteAccountModal from "../components/dashboard/DeleteAccountModal";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -25,6 +27,8 @@ const Dashboard = () => {
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [isAddingProfession, setIsAddingProfession] = useState(false);
   const [isAddingLocation, setIsAddingLocation] = useState(false);
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const {
     profileImage,
@@ -40,10 +44,15 @@ const Dashboard = () => {
     setProfileImage,
     refreshUserInfo,
     refreshSkills,
-    refreshProjects
+    refreshProjects,
+    refreshProfessions,
+    refreshLocations,
+    refreshAllSkills,
   } = useDashboard();
 
-  const { userInfo } = useAuth();
+
+
+  const { userInfo, refreshAllUserData } = useAuth();
 
   const profession = userInfo?.profession_id && professions 
     ? professions.find(p => p.id === userInfo.profession_id) || null 
@@ -60,8 +69,8 @@ const Dashboard = () => {
     handleAddProject,
     handleRemoveProject,
     handleAddProfession,
-    handleAddLocation
-  } = useDashboardActions(setError, refreshUserInfo, refreshSkills, refreshProjects);
+    handleAddLocation,
+  } = useDashboardActions(setError, refreshUserInfo, refreshSkills, refreshProjects, refreshProfessions, refreshLocations, refreshAllSkills, userInfo);
 
   const handleLogout = async () => {
     try {
@@ -71,8 +80,59 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      setIsDeletingAccount(true);
+      setError(null);
+      
+      await api.get('/sanctum/csrf-cookie');
+      const csrfToken = await getCsrfToken();
+      
+      await api.delete('/api/user', {
+        headers: {
+          'X-XSRF-TOKEN': csrfToken || '',
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+      });
+      
+      // Account deleted successfully, logout and redirect
+      await logout();
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      setError(error.response?.data?.message || 'Failed to delete account');
+      throw error;
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   const handleEditProfile = () => setIsEditingProfile(true);
-  const handleProfileImageUpload = (fileUrl: string) => setProfileImage(fileUrl);
+  const handleProfileImageUpload = async (fileUrl: string, fileName?: string) => {
+    if (!fileUrl) {
+      try {
+        await api.get('/sanctum/csrf-cookie');
+        const csrfToken = await getCsrfToken();
+        
+        await api.put('/api/user', { profile_image: null }, {
+          headers: {
+            'X-XSRF-TOKEN': csrfToken || '',
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        });
+        
+        setProfileImage(null);
+        await refreshAllUserData();
+      } catch (error: any) {
+        console.error('Error deleting profile image:', error);
+        setError(error.response?.data?.message || 'Failed to delete profile image');
+      }
+    } else {
+      setProfileImage(fileUrl);
+      await refreshAllUserData();
+    }
+  };
   const handleProfileImageError = (error: string) => setError(error);
   
   const handleAddSkillWithClose = async (skillData: { skill: string; isNewSkill: boolean }) => {
@@ -103,7 +163,10 @@ const Dashboard = () => {
     try {
       await handleAddLocation({ city, country, isNewLocation });
       setIsAddingLocation(false);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Location update failed:', error);
+      // Error is already set by handleAddLocation, so we don't need to set it again
+      // The modal will stay open so the user can see the error and try again
     }
   };
 
@@ -125,6 +188,7 @@ const Dashboard = () => {
         <div className="max-w-6xl mx-auto">
           <DashboardHeader 
             onLogout={handleLogout} 
+            onDeleteAccount={() => setIsDeleteAccountModalOpen(true)}
             skillsCount={userSkills.length}
             projectsCount={projects.length}
           />
@@ -236,6 +300,13 @@ const Dashboard = () => {
             onAdd={handleAddLocationWithClose}
             existingLocations={locations}
             isLoading={false}
+          />
+
+          <DeleteAccountModal
+            isOpen={isDeleteAccountModalOpen}
+            onClose={() => setIsDeleteAccountModalOpen(false)}
+            onDeleteAccount={handleDeleteAccount}
+            isLoading={isDeletingAccount}
           />
         </div>
       </Container>

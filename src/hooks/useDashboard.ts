@@ -1,24 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { api, getCsrfToken } from '../api';
+import { api } from '../api';
 import type { Skill, Project, Profession, Location, EditProfileForm } from '../types';
 import { getProfileImageUrl } from '../utils/profileImage';
 
-export const useDashboard = () => {
-  const { userInfo, refreshUserInfo } = useAuth();
-  
-  // State
+export function useDashboard() {
+  const { userInfo, user, refreshUserInfo } = useAuth();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Data state
   const [userSkills, setUserSkills] = useState<Skill[]>([]);
   const [allSkills, setAllSkills] = useState<Skill[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [professions, setProfessions] = useState<Profession[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
-  
-  // Loading states
   const [isLoadingSkills, setIsLoadingSkills] = useState(false);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
@@ -78,16 +72,20 @@ export const useDashboard = () => {
     fetchStaticData();
   }, []);
 
-  // Set profile image URL
   useEffect(() => {
-    if (!userInfo) {
+    if (!userInfo || !user) {
       setProfileImage(null);
       return;
     }
     
-    // Set the profile image URL directly - the browser will handle 404s gracefully
-    setProfileImage(getProfileImageUrl(userInfo.user_id));
-  }, [userInfo]);
+    if (user.profile_image) {
+      setProfileImage(user.profile_image);
+    } else {
+      if (!profileImage) {
+        setProfileImage(getProfileImageUrl(userInfo.user_id));
+      }
+    }
+  }, [userInfo, user, profileImage]);
 
   // Refresh functions
   const refreshSkills = async () => {
@@ -122,6 +120,36 @@ export const useDashboard = () => {
     }
   };
 
+  const refreshProfessions = async () => {
+    try {
+      const response = await api.get('/api/professions');
+      const data = response.data.data || response.data || [];
+      setProfessions(data);
+    } catch (error) {
+      console.error('Error fetching professions:', error);
+    }
+  };
+
+  const refreshLocations = async () => {
+    try {
+      const response = await api.get('/api/locations');
+      const data = response.data.data || response.data || [];
+      setLocations(data);
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+    }
+  };
+
+  const refreshAllSkills = async () => {
+    try {
+      const response = await api.get('/api/skills');
+      const data = response.data.data || response.data || [];
+      setAllSkills(data);
+    } catch (error) {
+      console.error('Error fetching all skills:', error);
+    }
+  };
+
   return {
     // State
     profileImage,
@@ -139,6 +167,9 @@ export const useDashboard = () => {
     setProfileImage,
     refreshUserInfo,
     refreshSkills,
-    refreshProjects
+    refreshProjects,
+    refreshProfessions,
+    refreshLocations,
+    refreshAllSkills
   };
 }; 

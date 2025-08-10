@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, UserInfo, EditProfileForm, Profession, Location } from '../../types';
+import React from 'react';
+import type { User, UserInfo } from '../../types';
 import BorderBox from '../shared/BorderBox';
 import SecondaryBtn from '../shared/SecondaryBtn';
 import ProfilePictureUpload from '../shared/ProfilePictureUpload';
@@ -9,7 +9,7 @@ interface ProfileSectionProps {
   userInfo: UserInfo | null;
   profileImage: string | null;
   onEditProfile: () => void;
-  onProfileImageUpload: (fileUrl: string, fileName: string) => void;
+  onProfileImageUpload: (fileUrl: string, fileName?: string) => void;
   onProfileImageError: (error: string) => void;
 }
 

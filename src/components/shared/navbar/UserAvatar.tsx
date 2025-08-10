@@ -21,7 +21,7 @@ const UserAvatar = ({ user, size = 'md', className = '' }: UserAvatarProps) => {
   // Always try to show profile image, fallback to initials on error
   return (
     <img
-      src={getProfileImageUrl(user.id)}
+      src={user.profile_image || getProfileImageUrl(user.id)}
       alt={`${user.first_name} ${user.last_name}`}
       className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
       title={`${user.first_name} ${user.last_name}`}

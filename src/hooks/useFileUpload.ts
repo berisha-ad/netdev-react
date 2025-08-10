@@ -55,9 +55,12 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadRetur
     setError(null);
 
     try {
+      console.log('Starting file upload:', { fileName: file.name, fileSize: file.size, fileType: file.type });
+      
       // Get fresh CSRF token
       await api.get('/sanctum/csrf-cookie');
       const csrfToken = await getCsrfToken();
+      console.log('CSRF token obtained:', csrfToken ? 'Yes' : 'No');
       
       const formData = new FormData();
       
@@ -83,30 +86,51 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadRetur
           break;
       }
 
+      console.log('Uploading to endpoint:', endpoint);
+      console.log('FormData contents:', Array.from(formData.entries()));
+
       const response = await api.post(endpoint, formData, {
         headers: {
           'X-XSRF-TOKEN': csrfToken || '',
-          'Content-Type': 'multipart/form-data',
           Accept: 'application/json',
         },
       });
+
+      console.log('Upload response:', response.data);
 
       // Handle different response formats
       let fileUrl = response.data.url || response.data.data?.url || response.data.data?.profile_image || response.data.profile_image;
       const fileName = file.name;
 
-      // If we have a relative path, construct the full URL
-      if (fileUrl && !fileUrl.startsWith('http')) {
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost/api';
-        if (fileUrl.includes('profile_images/')) {
-          fileUrl = `${baseUrl.replace('/api', '')}/storage/${fileUrl}`;
-        } else {
-          fileUrl = `${baseUrl}/storage/${fileUrl}`;
+      console.log('Extracted file URL:', fileUrl);
+
+      // For profile images, we'll use the response URL directly
+      // The backend should return the correct URL
+      if (!fileUrl) {
+        throw new Error('No file URL received from server');
+      }
+
+      // For profile images, also update the user's profile with the new image path
+      if (options.type === 'profile-picture') {
+        try {
+          const updateResponse = await api.put('/api/user', {
+            profile_image: fileUrl
+          }, {
+            headers: {
+              'X-XSRF-TOKEN': csrfToken || '',
+              'Content-Type': 'application/json',
+            },
+          });
+        } catch (updateError: any) {
+          console.error('Failed to update user profile with new image:', updateError);
+          console.error('Update error response:', updateError.response?.data);
+          console.error('Update error status:', updateError.response?.status);
         }
       }
 
       options.onSuccess?.(fileUrl, fileName);
     } catch (err: any) {
+      console.error('Upload error:', err);
       const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Upload failed';
       setError(errorMessage);
       options.onError?.(errorMessage);

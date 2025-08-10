@@ -4,8 +4,8 @@ import Section from "../components/shared/Section";
 import BorderBox from "../components/shared/BorderBox";
 import LoadingSpinner from "../components/shared/LoadingSpinner";
 import ErrorMessage from "../components/shared/ErrorMessage";
-import { useProfile } from "../hooks/useProfile";
 import { getProfileImageUrl } from "../utils/profileImage";
+import { useProfile } from "../hooks/useProfile";
 
 const Profile = () => {
   const { username } = useParams<{ username: string }>();
@@ -29,7 +29,6 @@ const Profile = () => {
         <Container>
           <div className="max-w-2xl mx-auto text-center">
             <ErrorMessage
-              title="Profile Not Found"
               message={error}
               className="mb-6"
             />
@@ -68,7 +67,7 @@ const Profile = () => {
     );
   }
 
-  const profileImageUrl = getProfileImageUrl(user.id);
+  const profileImageUrl = user.profile_image || getProfileImageUrl(user.id);
 
 
 

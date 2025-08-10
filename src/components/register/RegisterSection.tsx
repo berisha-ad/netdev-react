@@ -21,7 +21,9 @@ const RegisterSection = () => {
     password_confirmation: "",
   });
 
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
+    []
+  );
   const { register, error, isLoading, clearError } = useAuth();
   const navigate = useNavigate();
 
@@ -32,81 +34,91 @@ const RegisterSection = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+
+    // Clear validation error for this field when user starts typing
+    setValidationErrors((prev) => prev.filter((error) => error.field !== name));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Clear any previous errors
     clearError();
     setValidationErrors([]);
-    
+
     // Validate form data
     const errors = validateRegister(formData);
-    console.log('Frontend validation errors:', errors);
+    console.log("Frontend validation errors:", errors);
     if (errors.length > 0) {
       setValidationErrors(errors);
-      // For now, let's also try to submit to see backend errors
-      // return;
+      return; // Don't submit if frontend validation fails
     }
 
     try {
-      console.log('Submitting registration data:', formData);
+      console.log("Submitting registration data:", formData);
       const result = await register(formData);
-      
+
       if (result.success) {
         // Registration successful, redirect to login page
-        navigate("/login", { 
+        navigate("/login", {
           replace: true,
-          state: { 
-            message: "Registration successful! Please login with your credentials.",
-            email: formData.email // Pass email to pre-fill login form
-          }
+          state: {
+            message:
+              "Registration successful! Please login with your credentials.",
+            email: formData.email, // Pass email to pre-fill login form
+          },
         });
       }
     } catch (error: any) {
-      console.error('Registration error:', error);
-      
+      console.error("Registration error:", error);
+
       // Handle backend validation errors
       if (error.response?.status === 422) {
-        console.log('Backend validation errors:', error.response.data);
+        console.log("Backend validation errors:", error.response.data);
         const validationErrors = error.response.data.errors;
         if (validationErrors) {
           const backendErrors: ValidationError[] = [];
-          Object.keys(validationErrors).forEach(field => {
+          Object.keys(validationErrors).forEach((field) => {
             // Map backend field names to frontend field names
             let frontendField = field;
-            if (field === 'first_name') frontendField = 'first_name';
-            if (field === 'last_name') frontendField = 'last_name';
-            if (field === 'email') frontendField = 'email';
-            if (field === 'username') frontendField = 'username';
-            if (field === 'password') frontendField = 'password';
-            if (field === 'password_confirmation') frontendField = 'password_confirmation';
-            
+            if (field === "first_name") frontendField = "first_name";
+            if (field === "last_name") frontendField = "last_name";
+            if (field === "email") frontendField = "email";
+            if (field === "username") frontendField = "username";
+            if (field === "password") frontendField = "password";
+            if (field === "password_confirmation")
+              frontendField = "password_confirmation";
+
             backendErrors.push({
               field: frontendField,
-              message: validationErrors[field][0] // Take first error message
+              message: validationErrors[field][0], // Take first error message
             });
           });
           setValidationErrors(backendErrors);
         }
+      } else {
+        // Handle other types of errors
+        const errorMessage =
+          error.response?.data?.message ||
+          "Registration failed. Please try again.";
+        setValidationErrors([{ field: "general", message: errorMessage }]);
       }
     }
   };
 
   const getFieldError = (fieldName: string): string | undefined => {
-    return validationErrors.find(error => error.field === fieldName)?.message;
+    return validationErrors.find((error) => error.field === fieldName)?.message;
   };
 
   return (
-    <Section>
+    <Section className="p-2">
       <div className="flex justify-center items-center h-full">
         <BorderBox>
-          <form onSubmit={handleSubmit} className="w-100 p-4">
+          <form onSubmit={handleSubmit} className="w-100 max-sm:w-full p-2">
             <h1 className="text-2xl source-code">Create Account</h1>
 
             <div className="flex gap-4 mt-4">
@@ -118,7 +130,7 @@ const RegisterSection = () => {
                   id="first_name"
                   value={formData.first_name}
                   onChange={handleInputChange}
-                  error={getFieldError('first_name')}
+                  error={getFieldError("first_name")}
                   required
                 />
               </div>
@@ -130,7 +142,7 @@ const RegisterSection = () => {
                   id="last_name"
                   value={formData.last_name}
                   onChange={handleInputChange}
-                  error={getFieldError('last_name')}
+                  error={getFieldError("last_name")}
                   required
                 />
               </div>
@@ -144,7 +156,7 @@ const RegisterSection = () => {
                 id="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                error={getFieldError('email')}
+                error={getFieldError("email")}
                 required
               />
             </div>
@@ -157,7 +169,7 @@ const RegisterSection = () => {
                 id="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                error={getFieldError('username')}
+                error={getFieldError("username")}
                 required
               />
             </div>
@@ -170,7 +182,7 @@ const RegisterSection = () => {
                 id="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                error={getFieldError('password')}
+                error={getFieldError("password")}
                 required
               />
             </div>
@@ -183,7 +195,7 @@ const RegisterSection = () => {
                 id="password_confirmation"
                 value={formData.password_confirmation}
                 onChange={handleInputChange}
-                error={getFieldError('password_confirmation')}
+                error={getFieldError("password_confirmation")}
                 required
               />
             </div>
@@ -193,6 +205,19 @@ const RegisterSection = () => {
                 {isLoading ? <LoadingSpinner size="sm" /> : "Register"}
               </PrimaryBtn>
             </div>
+
+            {/* Display general errors */}
+            {validationErrors.some((error) => error.field === "general") && (
+              <div className="mt-4">
+                <ErrorMessage
+                  message={
+                    validationErrors.find((error) => error.field === "general")
+                      ?.message || ""
+                  }
+                  type="error"
+                />
+              </div>
+            )}
           </form>
 
           {error && (

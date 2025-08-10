@@ -16,8 +16,12 @@ const LoginSection = () => {
   const location = useLocation();
   const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-  const [successMessage, setSuccessMessage] = useState(location.state?.message || "");
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
+    []
+  );
+  const [successMessage, setSuccessMessage] = useState(
+    location.state?.message || ""
+  );
   const { login, error, isLoading, clearError } = useAuth();
 
   // Clear error when component mounts
@@ -27,12 +31,12 @@ const LoginSection = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Clear any previous errors and success message
     clearError();
     setValidationErrors([]);
     setSuccessMessage("");
-    
+
     // Validate inputs
     const errors = validateLogin(email, password);
     if (errors.length > 0) {
@@ -42,7 +46,7 @@ const LoginSection = () => {
 
     try {
       await login({ email, password });
-      
+
       // Redirect to the page they were trying to access, or user-info-setup
       const from = location.state?.from?.pathname || "/user-info-setup";
       navigate(from, { replace: true });
@@ -52,16 +56,16 @@ const LoginSection = () => {
   };
 
   const getFieldError = (fieldName: string): string | undefined => {
-    return validationErrors.find(error => error.field === fieldName)?.message;
+    return validationErrors.find((error) => error.field === fieldName)?.message;
   };
 
   return (
-    <Section>
+    <Section className="h-[60vh]">
       <div className="flex justify-center items-center h-full">
         <BorderBox>
-          <form onSubmit={handleLogin} className="w-100 p-4">
+          <form onSubmit={handleLogin} className="w-100 max-sm:w-full p-4">
             <h1 className="text-2xl source-code">Welcome back!</h1>
-            
+
             {successMessage && (
               <div className="mt-4">
                 <ErrorMessage message={successMessage} type="info" />
@@ -78,7 +82,7 @@ const LoginSection = () => {
                   setEmail(e.target.value);
                   setSuccessMessage(""); // Clear success message when typing
                 }}
-                error={getFieldError('email')}
+                error={getFieldError("email")}
                 required
               />
             </div>
@@ -93,7 +97,7 @@ const LoginSection = () => {
                   setPassword(e.target.value);
                   setSuccessMessage(""); // Clear success message when typing
                 }}
-                error={getFieldError('password')}
+                error={getFieldError("password")}
                 required
               />
             </div>
